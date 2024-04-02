@@ -3,7 +3,7 @@ name: zero2prod
 region: fra
 services:
   - name: zero2prod
-    dockerfile_path: dockerfile_path
+    dockerfile_path: Dockerfile
     source_dir: .
     github:
       branch: main
