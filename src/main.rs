@@ -1,8 +1,8 @@
-use std::net::TcpListener;
-
+#![allow(unused_imports)]
 use secrecy::ExposeSecret;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
+use std::net::TcpListener;
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
 use zero2prod::{configuration::get_configuration, startup::run};
 
