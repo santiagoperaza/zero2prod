@@ -32,7 +32,7 @@ impl EmailClient {
         html_content: &str,
         text_content: &str,
     ) -> Result<(), reqwest::Error> {
-        let url = format!("{}/email", self.base_url);
+        let url = format!("{}/mail/send", self.base_url);
         let request_body = SendEmailRequest {
             from: self.sender.as_ref(),
             to: recipient.as_ref(),
@@ -43,8 +43,8 @@ impl EmailClient {
         self.http_client
             .post(&url)
             .header(
-                "X-Postmark-Server-Token",
-                self.authorization_token.expose_secret(),
+                "Authorization",
+                format!("Bearer {}", self.authorization_token.expose_secret()),
             )
             .json(&request_body)
             .send()
@@ -124,9 +124,9 @@ mod tests {
         let mock_server = MockServer::start().await;
         let email_client = email_client(mock_server.uri());
 
-        Mock::given(header_exists("X-Postmark-Server-Token"))
+        Mock::given(header_exists("Authorization"))
             .and(header("Content-Type", "application/json"))
-            .and(path("/email"))
+            .and(path("/mail/send"))
             .and(method("POST"))
             .and(SendEmailBodyMatcher)
             .respond_with(ResponseTemplate::new(200))
