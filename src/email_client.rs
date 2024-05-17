@@ -34,12 +34,27 @@ impl EmailClient {
     ) -> Result<(), reqwest::Error> {
         let url = format!("{}/mail/send", self.base_url);
         let request_body = SendEmailRequest {
-            from: self.sender.as_ref(),
-            to: recipient.as_ref(),
+            personalizations: vec![Personalization {
+                to: vec![Recipient {
+                    email: recipient.as_ref(),
+                }],
+            }],
+            from: Email {
+                email: self.sender.as_ref(),
+            },
             subject,
-            html_body: html_content,
-            text_body: text_content,
+            content: vec![
+                Content {
+                    content_type: "text/plain",
+                    value: text_content,
+                },
+                Content {
+                    content_type: "text/plain",
+                    value: html_content,
+                },
+            ],
         };
+
         self.http_client
             .post(&url)
             .header(
@@ -57,11 +72,32 @@ impl EmailClient {
 #[derive(serde::Serialize)]
 #[serde(rename_all = "PascalCase")]
 struct SendEmailRequest<'a> {
-    from: &'a str,
-    to: &'a str,
+    personalizations: Vec<Personalization<'a>>,
+    from: Email<'a>,
     subject: &'a str,
-    html_body: &'a str,
-    text_body: &'a str,
+    content: Vec<Content<'a>>,
+}
+
+#[derive(serde::Serialize)]
+struct Personalization<'a> {
+    to: Vec<Recipient<'a>>,
+}
+
+#[derive(serde::Serialize)]
+struct Recipient<'a> {
+    email: &'a str,
+}
+
+#[derive(serde::Serialize)]
+struct Email<'a> {
+    email: &'a str,
+}
+
+#[derive(serde::Serialize)]
+struct Content<'a> {
+    #[serde(rename = "type")]
+    content_type: &'a str,
+    value: &'a str,
 }
 
 #[cfg(test)]
@@ -83,10 +119,9 @@ mod tests {
             let result: Result<serde_json::Value, _> = serde_json::from_slice(&request.body);
             if let Ok(body) = result {
                 body.get("From").is_some()
-                    && body.get("To").is_some()
+                    && body.get("Personalizations").is_some()
                     && body.get("Subject").is_some()
-                    && body.get("HtmlBody").is_some()
-                    && body.get("TextBody").is_some()
+                    && body.get("Content").is_some()
             } else {
                 false
             }
