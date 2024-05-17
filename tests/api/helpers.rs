@@ -71,7 +71,7 @@ impl TestApp {
 pub async fn spawn_app() -> TestApp {
     Lazy::force(&TRACING);
 
-    // Launch a mock server to stand in for Email Server's API
+    // Launch a mock server to stand in for Email's API
     let email_server = MockServer::start().await;
 
     // Randomise configuration to ensure test isolation
