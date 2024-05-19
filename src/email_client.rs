@@ -2,6 +2,7 @@ use crate::domain::SubscriberEmail;
 use reqwest::Client;
 use secrecy::{ExposeSecret, Secret};
 
+#[derive(Debug)]
 pub struct EmailClient {
     http_client: Client,
     base_url: String,
@@ -25,6 +26,10 @@ impl EmailClient {
         }
     }
 
+    #[tracing::instrument(
+        name = "Sending email",
+        // skip(new_subscriber, transaction)
+    )]
     pub async fn send_email(
         &self,
         recipient: SubscriberEmail,
@@ -45,15 +50,19 @@ impl EmailClient {
             subject,
             content: vec![
                 Content {
-                    content_type: "text/plain",
+                    r#type: "text/plain",
                     value: text_content,
                 },
                 Content {
-                    content_type: "text/plain",
+                    r#type: "text/html",
                     value: html_content,
                 },
             ],
         };
+
+        print!("request_body: {:?}", request_body);
+        print!("secret: {:?}", self.authorization_token.expose_secret());
+        print!("url: {:?}", &url);
 
         self.http_client
             .post(&url)
@@ -65,12 +74,12 @@ impl EmailClient {
             .send()
             .await?
             .error_for_status()?;
+        print!("SUCCESS: {:?}", request_body);
         Ok(())
     }
 }
 
-#[derive(serde::Serialize)]
-#[serde(rename_all = "PascalCase")]
+#[derive(serde::Serialize, Debug)]
 struct SendEmailRequest<'a> {
     personalizations: Vec<Personalization<'a>>,
     from: Email<'a>,
@@ -78,25 +87,25 @@ struct SendEmailRequest<'a> {
     content: Vec<Content<'a>>,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 struct Personalization<'a> {
     to: Vec<Recipient<'a>>,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 struct Recipient<'a> {
     email: &'a str,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 struct Email<'a> {
     email: &'a str,
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 struct Content<'a> {
     #[serde(rename = "type")]
-    content_type: &'a str,
+    r#type: &'a str,
     value: &'a str,
 }
 
@@ -118,10 +127,10 @@ mod tests {
         fn matches(&self, request: &Request) -> bool {
             let result: Result<serde_json::Value, _> = serde_json::from_slice(&request.body);
             if let Ok(body) = result {
-                body.get("From").is_some()
-                    && body.get("Personalizations").is_some()
-                    && body.get("Subject").is_some()
-                    && body.get("Content").is_some()
+                body.get("from").is_some()
+                    && body.get("personalizations").is_some()
+                    && body.get("subject").is_some()
+                    && body.get("content").is_some()
             } else {
                 false
             }
