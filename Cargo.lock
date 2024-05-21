@@ -3250,6 +3250,7 @@ dependencies = [
  "serde_json",
  "sqlx",
  "sqlx-postgres",
+ "thiserror",
  "tokio",
  "tracing",
  "tracing-actix-web",
