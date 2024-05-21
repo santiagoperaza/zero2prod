@@ -33,6 +33,7 @@ rand = { version = "0.8", features=["std_rng"] }
 anyhow = "1.0.40"
 validator = "0.16"
 tracing-actix-web = "0.7"
+thiserror = "1"
 secrecy = { version = "0.8", features = ["serde"] }
 
 
